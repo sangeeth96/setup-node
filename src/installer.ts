@@ -7,6 +7,7 @@ import * as tc from '@actions/tool-cache';
 import * as path from 'path';
 import * as semver from 'semver';
 import fs = require('fs');
+import { getVersionsFromDist } from './node-versions';
 
 //
 // Node versions interface
@@ -274,7 +275,7 @@ async function queryDistForMatch(versionSpec: string): Promise<string> {
   }
 
   let versions: string[] = [];
-  let nodeVersions = await module.exports.getVersionsFromDist();
+  let nodeVersions = await getVersionsFromDist();
 
   nodeVersions.forEach((nodeVersion: INodeVersion) => {
     // ensure this version supports your os and platform
@@ -286,16 +287,6 @@ async function queryDistForMatch(versionSpec: string): Promise<string> {
   // get the latest version that matches the version spec
   let version: string = evaluateVersions(versions, versionSpec);
   return version;
-}
-
-export async function getVersionsFromDist(): Promise<INodeVersion[]> {
-  let dataUrl = 'https://nodejs.org/dist/index.json';
-  let httpClient = new hc.HttpClient('setup-node', [], {
-    allowRetries: true,
-    maxRetries: 3
-  });
-  let response = await httpClient.getJson<INodeVersion[]>(dataUrl);
-  return response.result || [];
 }
 
 // For non LTS versions of Node, the files we need (for Windows) are sometimes located

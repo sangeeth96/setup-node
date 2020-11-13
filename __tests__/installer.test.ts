@@ -7,6 +7,7 @@ import osm = require('os');
 import path from 'path';
 import * as main from '../src/main';
 import * as im from '../src/installer';
+import * as nv from '../src/node-versions';
 import * as auth from '../src/authutil';
 import {context} from '@actions/github';
 
@@ -63,7 +64,7 @@ describe('setup-node', () => {
     exSpy = jest.spyOn(tc, 'extractTar');
     cacheSpy = jest.spyOn(tc, 'cacheDir');
     getManifestSpy = jest.spyOn(tc, 'getManifestFromRepo');
-    getDistSpy = jest.spyOn(im, 'getVersionsFromDist');
+    getDistSpy = jest.spyOn(nv, 'getVersionsFromDist');
 
     // io
     whichSpy = jest.spyOn(io, 'which');
@@ -124,7 +125,7 @@ describe('setup-node', () => {
   });
 
   it('can mock dist versions', async () => {
-    let versions: im.INodeVersion[] = await im.getVersionsFromDist();
+    let versions: im.INodeVersion[] = await nv.getVersionsFromDist();
     expect(versions).toBeDefined();
     expect(versions?.length).toBe(23);
   });
@@ -532,8 +533,126 @@ describe('setup-node', () => {
         'utf8'
       );
       expect(logSpy).toHaveBeenCalledWith(
-        `Resolved ${versionFile} as ${versionSpec}`
+        `Resolved ${versionFile} as 12`
       );
     });
+
+    describe('.nvmrc syntax', () => {
+      it('without `v` prefix', async () => {
+        // Arrange
+        const versionSpec = '12';
+        const versionFile = '.nvmrc';
+  
+        inputs['node-version-file'] = versionFile;
+  
+        readFileSyncSpy.mockImplementation(() => versionSpec);
+  
+        // Act
+        await main.run();
+  
+        // Assert
+        expect(readFileSyncSpy).toHaveBeenCalledTimes(1);
+        expect(readFileSyncSpy).toHaveBeenCalledWith(
+          path.join(__dirname, '..', versionFile),
+          'utf8'
+        );
+        expect(logSpy).toHaveBeenCalledWith(
+          `Resolved ${versionFile} as ${versionSpec}`
+        );
+      });
+  
+      it('lts/*', async () => {
+        // Arrange
+        const versionSpec = 'lts/*';
+        const versionFile = '.nvmrc';
+  
+        inputs['node-version-file'] = versionFile;
+  
+        readFileSyncSpy.mockImplementation(() => versionSpec);
+  
+        // Act
+        await main.run();
+  
+        // Assert
+        expect(readFileSyncSpy).toHaveBeenCalledTimes(1);
+        expect(readFileSyncSpy).toHaveBeenCalledWith(
+          path.join(__dirname, '..', versionFile),
+          'utf8'
+        );
+        expect(logSpy).toHaveBeenCalledWith(
+          `Resolved ${versionFile} as 12.16.3`
+        );
+      });
+
+      it('lts/erbium', async () => {
+        // Arrange
+        const versionSpec = 'lts/*';
+        const versionFile = '.nvmrc';
+  
+        inputs['node-version-file'] = versionFile;
+  
+        readFileSyncSpy.mockImplementation(() => versionSpec);
+  
+        // Act
+        await main.run();
+  
+        // Assert
+        expect(readFileSyncSpy).toHaveBeenCalledTimes(1);
+        expect(readFileSyncSpy).toHaveBeenCalledWith(
+          path.join(__dirname, '..', versionFile),
+          'utf8'
+        );
+        expect(logSpy).toHaveBeenCalledWith(
+          `Resolved ${versionFile} as 12.16.3`
+        );
+      });
+
+      it('partial syntax like 12', async () => {
+        // Arrange
+        const versionSpec = '12';
+        const versionFile = '.nvmrc';
+  
+        inputs['node-version-file'] = versionFile;
+  
+        readFileSyncSpy.mockImplementation(() => versionSpec);
+  
+        // Act
+        await main.run();
+  
+        // Assert
+        expect(readFileSyncSpy).toHaveBeenCalledTimes(1);
+        expect(readFileSyncSpy).toHaveBeenCalledWith(
+          path.join(__dirname, '..', versionFile),
+          'utf8'
+        );
+        expect(logSpy).toHaveBeenCalledWith(
+          `Resolved ${versionFile} as 12`
+        );
+      });
+
+      it('partial syntax like 12.16', async () => {
+        // Arrange
+        const versionSpec = '12.16';
+        const versionFile = '.nvmrc';
+  
+        inputs['node-version-file'] = versionFile;
+  
+        readFileSyncSpy.mockImplementation(() => versionSpec);
+  
+        // Act
+        await main.run();
+  
+        // Assert
+        expect(readFileSyncSpy).toHaveBeenCalledTimes(1);
+        expect(readFileSyncSpy).toHaveBeenCalledWith(
+          path.join(__dirname, '..', versionFile),
+          'utf8'
+        );
+        expect(logSpy).toHaveBeenCalledWith(
+          `Resolved ${versionFile} as 12.16`
+        );
+      });
+    });
+    
   });
 });
